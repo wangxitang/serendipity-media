@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>素人自媒体 AI 工作台</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --border:#2a2f3a;
+    --text:#e6e8ec; --muted:#9aa0ab; --accent:#ff5a5f; --accent2:#4d8dff;
+    --ok:#3fb950; --warn:#e3b341; --bad:#f85149; --chip:#262b36;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;
+    background:linear-gradient(90deg,#171a21,#1b1f29);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+  .logo{font-weight:800;font-size:18px;letter-spacing:.5px}
+  .logo span{color:var(--accent)}
+  .nav{display:flex;gap:4px;flex-wrap:wrap}
+  .nav button{background:transparent;border:1px solid transparent;color:var(--muted);
+    padding:7px 13px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s}
+  .nav button:hover{background:var(--panel2);color:var(--text)}
+  .nav button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .overview{display:flex;gap:10px;padding:14px 22px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--bg)}
+  .ov-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:96px}
+  .ov-card .n{font-size:22px;font-weight:800}
+  .ov-card .t{font-size:12px;color:var(--muted)}
+  main{padding:22px;max-width:1100px;margin:0 auto}
+  .view{display:none}
+  .view.active{display:block}
+  h2{margin:0 0 4px;font-size:20px}
+  .sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+  .btn{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:8px;
+    cursor:pointer;font-weight:600;font-size:13px;transition:.15s}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.sec{background:var(--panel2);border:1px solid var(--border);color:var(--text)}
+  .btn.sec:hover{background:var(--chip)}
+  .btn.ghost{background:transparent;border:1px dashed var(--border);color:var(--muted)}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .grid{display:grid;gap:14px}
+  .cards{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative}
+  .card h3{margin:0 0 8px;font-size:15px;line-height:1.4}
+  .card .meta{color:var(--muted);font-size:12px;margin-bottom:8px}
+  .card .body{font-size:13px;color:#cdd2da;white-space:pre-wrap;word-break:break-word}
+  .card .acts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .chip{display:inline-block;background:var(--chip);color:var(--muted);border-radius:20px;
+    padding:2px 10px;font-size:11px;margin:2px 4px 2px 0}
+  .chip.tag{background:#2a3340;color:#8fb8ff}
+  .chip.hook{background:#33262a;color:#ff9ea2}
+  .chip.struct{background:#26332a;color:#8ee6a8}
+  .chip.star{background:#332f26;color:#f0c674}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;font-weight:600}
+  input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit}
+  textarea{min-height:80px;resize:vertical}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent2)}
+  .form-wrap{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;max-width:720px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .form-grid .full{grid-column:1/-1}
+  .score-row{display:flex;gap:10px;flex-wrap:wrap}
+  .score-box{flex:1;min-width:120px}
+  .score-box input{text-align:center;font-weight:700}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;max-width:680px;width:100%;max-height:85vh;overflow:auto}
+  .modal h3{margin-top:0}
+  .close-x{float:right;cursor:pointer;color:var(--muted);font-size:20px;line-height:1}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel2);
+    border:1px solid var(--border);padding:11px 20px;border-radius:10px;z-index:200;opacity:0;transition:.25s;font-size:13px}
+  .toast.show{opacity:1}
+  .ai-out{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;white-space:pre-wrap;font-size:13px;color:#d7dce4}
+  .ai-out h4{margin:0 0 6px;color:var(--accent2);font-size:13px}
+  .badge{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700}
+  .badge.draft{background:#2a2f3a;color:var(--muted)}
+  .badge.sched{background:#2a3340;color:#8fb8ff}
+  .badge.pub{background:#26332a;color:#8ee6a8}
+  .badge.done{background:#332f26;color:#f0c674}
+  .pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;background:var(--chip);color:var(--muted)}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;border:1px dashed var(--border);border-radius:12px}
+  .kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .kanban .col{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:120px}
+  .kanban .col h4{margin:0 0 10px;font-size:13px;color:var(--muted)}
+  .kanban .item{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px;margin-bottom:8px;font-size:13px;cursor:pointer}
+  .kanban .item:hover{border-color:var(--accent2)}
+  .quest{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+  .quest .q{font-weight:600;margin-bottom:6px}
+  .hint{font-size:12px;color:var(--muted);background:var(--panel2);border-left:3px solid var(--accent2);padding:8px 12px;border-radius:6px;margin:8px 0}
+  details{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:10px}
+  summary{cursor:pointer;font-weight:600;color:var(--accent2)}
+  .stat{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0}
+  .stat .s{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 14px}
+  .stat .s b{font-size:18px;display:block}
+  .stat .s span{font-size:11px;color:var(--muted)}
+  .danger{color:var(--bad);border-color:var(--bad)}
+  @media(max-width:720px){.form-grid{grid-template-columns:1fr}.kanban{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">素人自媒体 <span>AI 工作台</span></div>
+  <nav class="nav" id="nav">
+    <button data-v="idea" class="active">灵感速记</button>
+    <button data-v="model">范文库</button>
+    <button data-v="topic">选题库</button>
+    <button data-v="work">作品库</button>
+    <button data-v="review">复盘库</button>
+    <button data-v="rule">规则库</button>
+    <button data-v="setting">设置</button>
+  </nav>
+</header>
+
+<div class="overview" id="overview"></div>
+
+<main>
+  <!-- 灵感速记 -->
+  <section class="view active" id="v-idea">
+    <h2>灵感速记</h2>
+    <p class="sub">任何碎片想法、刷到的点子、突然的感悟，先记下来。后续可一键转成选题。</p>
+    <div class="row">
+      <button class="btn" onclick="openIdeaForm()">+ 记一条灵感</button>
+      <input id="ideaSearch" placeholder="搜索灵感…" style="max-width:240px" oninput="renderIdea()">
+      <select id="ideaFilter" onchange="renderIdea()" style="max-width:160px">
+        <option value="">全部状态</option>
+        <option value="pending">待处理</option>
+        <option value="topic">已转选题</option>
+      </select>
+    </div>
+    <div class="grid cards" id="ideaList"></div>
+  </section>
+
+  <!-- 范文库 -->
+  <section class="view" id="v-model">
+    <h2>范文库</h2>
+    <p class="sub">看到好的口播视频，复制文案粘贴进来，AI 帮你拆解钩子、结构、金句并自动打标。</p>
+    <div class="row">
+      <button class="btn" onclick="openModelForm()">+ 添加范文</button>
+      <input id="modelSearch" placeholder="搜索范文…" style="max-width:240px" oninput="renderModel()">
+    </div>
+    <div class="grid cards" id="modelList"></div>
+  </section>
+
+  <!-- 选题库 -->
+  <section class="view" id="v-topic">
+    <h2>选题库</h2>
+    <p class="sub">从灵感生成选题、AI 打分排序、关联范文、排期发布。下方看板按状态流转。</p>
+    <div class="row">
+      <button class="btn" onclick="openTopicForm()">+ 手动建选题</button>
+      <button class="btn sec" onclick="aiGenTopics()">AI 批量生成选题</button>
+      <button class="btn ghost" onclick="toggleKanban()" id="kanbanBtn">切换看板/列表</button>
+      <input id="topicSearch" placeholder="搜索选题…" style="max-width:220px" oninput="renderTopic()">
+    </div>
+    <div id="topicKanban" class="kanban" style="display:none"></div>
+    <div class="grid cards" id="topicList"></div>
+  </section>
+
+  <!-- 作品库 -->
+  <section class="view" id="v-work">
+    <h2>作品库</h2>
+    <p class="sub">记录已发布作品与数据，AI 多维度诊断"为什么没流量"，并给出优化方向。</p>
+    <div class="row">
+      <button class="btn" onclick="openWorkForm()">+ 记录作品</button>
+      <input id="workSearch" placeholder="搜索作品…" style="max-width:240px" oninput="renderWork()">
+      <select id="workFilter" onchange="renderWork()" style="max-width:160px">
+        <option value="">全部平台</option>
+        <option value="抖音">抖音</option>
+        <option value="视频号">视频号</option>
+      </select>
+    </div>
+    <div class="grid cards" id="workList"></div>
+  </section>
+
+  <!-- 复盘库 -->
+  <section class="view" id="v-review">
+    <h2>复盘库</h2>
+    <p class="sub">按周/月自动汇总作品与选题执行情况，AI 生成复盘报告与下一步行动。</p>
+    <div class="row">
+      <button class="btn" onclick="aiReview('week')">生成本周复盘</button>
+      <button class="btn sec" onclick="aiReview('month')">生成本月复盘</button>
+    </div>
+    <div class="grid cards" id="reviewList"></div>
+  </section>
+
+  <!-- 规则库 -->
+  <section class="view" id="v-rule">
+    <h2>规则库 · IP 定位与运营 SOP</h2>
+    <p class="sub">这是你所有 AI 产出的"人设约束"。先完成定位问卷，AI 才会按"你的风格"工作。</p>
+    <div id="ruleContent"></div>
+  </section>
+
+  <!-- 设置 -->
+  <section class="view" id="v-setting">
+    <h2>设置</h2>
+    <p class="sub">配置 DeepSeek API Key、数据备份与恢复。</p>
+    <div class="form-wrap">
+      <label>DeepSeek API Key</label>
+      <input id="apiKey" type="password" placeholder="sk-... 留空则智能功能降级为复制提示词">
+      <div class="hint">Key 仅保存在你本地浏览器，只在调用 AI 时发送到 DeepSeek 官方接口，不会上传到任何其他服务器。获取地址：platform.deepseek.com</div>
+      <label>模型</label>
+      <select id="apiModel">
+        <option value="deepseek-chat">deepseek-chat（默认，便宜）</option>
+        <option value="deepseek-reasoner">deepseek-reasoner（推理更强）</option>
+      </select>
+      <div class="row" style="margin-top:16px">
+        <button class="btn" onclick="saveSettings()">保存设置</button>
+        <button class="btn sec" onclick="testAPI()">测试连接</button>
+        <button class="btn sec" onclick="exportData()">导出全部数据</button>
+        <button class="btn sec" onclick="document.getElementById('importFile').click()">导入数据</button>
+        <input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(this)">
+        <button class="btn danger" onclick="clearAll()">清空全部数据</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 通用弹窗 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalBox"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 存储层 ============ */
+const DB = {
+  get(k, d){ try{ return JSON.parse(localStorage.getItem('sw_'+k)) ?? d }catch(e){ return d } },
+  set(k, v){ localStorage.setItem('sw_'+k, JSON.stringify(v)) },
+  has(k){ return localStorage.getItem('sw_'+k) !== null },
+  uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7) }
+};
+const stores = ['idea','model','topic','work','review','rule','settings'];
+/* 不在启动时强制初始化各库；seedDemo 用 DB.has 判断首次访问注入示例数据；各渲染函数均以 DB.get(k, 默认值) 兜底。 */
+
+/* ============ 通用 UI ============ */
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200) }
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) }
+function fmt(d){ if(!d) return ''; try{ const x=new Date(d); return x.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(e){return d} }
+function openModal(html){ document.getElementById('modalBox').innerHTML='<span class="close-x" onclick="closeModal()">×</span>'+html; document.getElementById('modalBg').classList.add('show') }
+function closeModal(){ document.getElementById('modalBg').classList.remove('show') }
+document.getElementById('modalBg').addEventListener('click',e=>{ if(e.target.id==='modalBg') closeModal() });
+
+function switchView(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  document.getElementById('v-'+v).classList.add('active');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  renderOverview();
+  const m={'idea':renderIdea,'model':renderModel,'topic':renderTopic,'work':renderWork,'review':renderReview,'rule':renderRule}[v];
+  if(m) m();
+}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
+
+function renderOverview(){
+  const c=document.getElementById('overview');
+  const counts={ '灵感':DB.get('idea',[]).length,'范文':DB.get('model',[]).length,
+    '选题':DB.get('topic',[]).length,'作品':DB.get('work',[]).length,'复盘':DB.get('review',[]).length };
+  const rule=DB.get('rule',{}); const located=rule.position&&rule.position.trim()?1:0;
+  c.innerHTML=Object.entries(counts).map(([k,v])=>`<div class="ov-card"><div class="n">${v}</div><div class="t">${k}</div></div>`).join('')
+    + `<div class="ov-card"><div class="n" style="color:${located?'var(--ok)':'var(--warn)'}">${located?'✓':'!'}</div><div class="t">IP定位</div></div>`;
+}
+
+/* ============ AI 调用 ============ */
+async function callDeepSeek(systemPrompt, userPrompt, jsonMode=false){
+  const settings=DB.get('settings',{});
+  const key=settings.apiKey;
+  if(!key){ return {ok:false, reason:'nokey'} }
+  const body={ model: settings.apiModel||'deepseek-chat', messages:[
+    {role:'system',content:systemPrompt},
+    {role:'user',content:userPrompt}
+  ], temperature:0.7 };
+  if(jsonMode) body.response_format={type:'json_object'};
+  try{
+    const r=await fetch('https://api.deepseek.com/v1/chat/completions',{
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key}, body:JSON.stringify(body)
+    });
+    if(!r.ok){ const t=await r.text(); return {ok:false,reason:'http',detail:t} }
+    const j=await r.json();
+    return {ok:true, content:j.choices[0].message.content};
+  }catch(e){ return {ok:false,reason:'err',detail:String(e)} }
+}
+function ruleContext(){
+  const r=DB.get('rule',{});
+  if(!r.position) return '（尚未完成IP定位，请先在规则库填写定位；以下分析为通用建议）';
+  return `【你的IP定位】\n赛道：${r.track||'未填'}\n人设：${r.persona||'未填'}\n受众：${r.audience||'未填'}\n调性：${r.tone||'未填'}\n差异化：${r.diff||'未填'}\n内容比例：${r.ratio||'未填'}\n发布时段：${r.time||'未填'}\n风格红线：${r.redline||'无'}`;
+}
+// 无 key 时把提示词复制到剪贴板
+function copyFallback(prompt){
+  const text=`【系统指令】\n${prompt.system}\n\n【用户输入】\n${prompt.user}`;
+  navigator.clipboard.writeText(text).then(()=>toast('提示词已复制，去 DeepSeek/豆包/Kimi 粘贴即可')).catch(()=>{
+    openModal('<h3>复制失败，请手动复制</h3><textarea style="min-height:300px">'+esc(text)+'</textarea>');
+  });
+}
+function aiBtn(id, label){ return `<button class="btn sec sm" id="${id}" onclick="this.disabled=true;this.textContent='分析中…'">${label}</button>` }
+
+/* ============ 灵感速记 ============ */
+function openIdeaForm(){
+  openModal(`<h3>记一条灵感</h3>
+    <label>灵感内容 *</label><textarea id="f_idea_text" placeholder="任何想法、看到的现象、想吐槽的点…"></textarea>
+    <label>标签（逗号分隔，可选）</label><input id="f_idea_tags" placeholder="如：职场, 吐槽, 观察">
+    <div class="row" style="margin-top:16px"><button class="btn" onclick="saveIdea()">保存</button></div>`);
+}
+function saveIdea(){
+  const text=document.getElementById('f_idea_text').value.trim();
+  if(!text){ toast('内容不能为空'); return }
+  const list=DB.get('idea',[]);
+  list.unshift({id:DB.uid(),text,tags:document.getElementById('f_idea_tags').value.split(',').map(s=>s.trim()).filter(Boolean),status:'pending',created:Date.now()});
+  DB.set('idea',list); closeModal(); renderIdea(); toast('已记录');
+}
+function renderIdea(){
+  const list=DB.get('idea',[]); const q=(document.getElementById('ideaSearch').value||'').toLowerCase();
+  const f=document.getElementById('ideaFilter').value;
+  const fl=list.filter(x=>(!q||x.text.toLowerCase().includes(q)||(x.tags||[]).join(',').toLowerCase().includes(q))&&(!f||x.status===f));
+  const box=document.getElementById('ideaList');
+  if(!fl.length){ box.innerHTML='<div class="empty">还没有灵感，点"记一条灵感"开始</div>'; return }
+  box.innerHTML=fl.map(x=>`<div class="card">
+    <div class="meta">${fmt(x.created)} · <span class="pill">${x.status==='topic'?'已转选题':'待处理'}</span></div>
+    <div class="body">${esc(x.text)}</div>
+    <div>${(x.tags||[]).map(t=>`<span class="chip tag">${esc(t)}</span>`).join('')}</div>
+    <div class="acts">
+      ${x.status==='pending'?`<button class="btn sm" onclick="ideaToTopic('${x.id}')">转为选题</button>`:''}
+      <button class="btn ghost sm" onclick="delItem('idea','${x.id}')">删除</button>
+    </div></div>`).join('');
+}
+function ideaToTopic(id){
+  const list=DB.get('idea',[]); const x=list.find(i=>i.id===id); if(!x) return;
+  x.status='topic'; DB.set('idea',list);
+  const t=DB.get('topic',[]);
+  t.unshift({id:DB.uid(),title:x.text.slice(0,40),angle:x.text,note:'来自灵感',fromIdea:id,
+    scores:{fit:3,time:3,diff:3,exec:3},status:'draft',platform:'抖音',created:Date.now()});
+  DB.set('topic',t); closeModal(); renderIdea(); renderTopic(); toast('已转为选题草稿');
+}
+
+/* ============ 范文库 ============ */
+function openModelForm(){
+  openModal(`<h3>添加范文</h3>
+    <label>口播/文案原文 *</label><textarea id="f_model_text" style="min-height:160px" placeholder="粘贴你看到的爆款口播文案…"></textarea>
+    <div class="form-grid">
+      <div><label>来源平台</label><select id="f_model_plat"><option>抖音</option><option>视频号</option><option>小红书</option><option>其他</option></select></div>
+      <div><label>作者/来源</label><input id="f_model_src" placeholder="可选"></div>
+    </div>
+    <label>我的笔记（可选）</label><textarea id="f_model_note" placeholder="这段为什么打动你？"></textarea>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" onclick="saveModel()">保存</button>
+      <button class="btn sec" id="m_ai" onclick="aiAnalyzeModel()">AI 拆解打标</button>
+    </div>
+    <div id="m_out"></div>`);
+}
+function saveModel(withAnalysis){
+  const text=document.getElementById('f_model_text').value.trim();
+  if(!text){ toast('原文不能为空'); return }
+  const list=DB.get('model',[]);
+  const item={id:DB.uid(),text,platform:document.getElementById('f_model_plat').value,
+    source:document.getElementById('f_model_src').value, note:document.getElementById('f_model_note').value,
+    analysis: withAnalysis||null, created:Date.now()};
+  list.unshift(item); DB.set('model',list); closeModal(); renderModel(); toast('范文已保存');
+}
+async function aiAnalyzeModel(){
+  const text=document.getElementById('f_model_text').value.trim();
+  if(!text){ toast('请先粘贴原文'); return }
+  const system=`你是短视频爆款拆解专家。${ruleContext()}\n把口播文案拆解为结构化标签，严格返回 JSON：
+  {"hook":"钩子类型(如:反常识/情绪共鸣/悬念提问/痛点直击/身份认同)","struct":"结构模板(如:痛点-共鸣-方法-行动)","golden":["金句1","金句2"],"duration":"预估时长(如:45秒)","style":["风格标签"],"why":"为什么可能爆(一句话)","reuse":"可复用的开头句式"}`;
+  const user=`请拆解这篇口播文案：\n"""${text}"""`;
+  const res=await callDeepSeek(system,user,true);
+  if(!res.ok){ copyFallback({system,user}); return }
+  let a; try{ a=JSON.parse(res.content) }catch(e){ a={raw:res.content} }
+  const list=DB.get('model',[]);
+  list.unshift({id:DB.uid(),text,platform:document.getElementById('f_model_plat').value,
+    source:document.getElementById('f_model_src').value, note:document.getElementById('f_model_note').value,
+    analysis:a, created:Date.now()});
+  DB.set('model',list); renderModel(); closeModal(); toast('AI 拆解完成');
+}
+function renderModel(){
+  const list=DB.get('model',[]); const q=(document.getElementById('modelSearch').value||'').toLowerCase();
+  const fl=list.filter(x=>(!q||x.text.toLowerCase().includes(q)||(x.source||'').toLowerCase().includes(q)));
+  const box=document.getElementById('modelList');
+  if(!fl.length){ box.innerHTML='<div class="empty">还没有范文，粘贴第一篇爆款文案吧</div>'; return }
+  box.innerHTML=fl.map(x=>{
+    const a=x.analysis||{};
+    return `<div class="card">
+      <div class="meta">${x.platform} · ${esc(x.source||'未知来源')} · ${fmt(x.created)}</div>
+      <div class="body">${esc(x.text.slice(0,200))}${x.text.length>200?'…':''}</div>
+      ${a.hook?`<div style="margin-top:8px"><span class="chip hook">钩子·${esc(a.hook)}</span>${a.duration?`<span class="chip">${esc(a.duration)}</span>`:''}</div>`:''}
+      ${a.struct?`<div><span class="chip struct">结构·${esc(a.struct)}</span></div>`:''}
+      ${(a.golden||[]).map(g=>`<span class="chip star">💡${esc(g)}</span>`).join('')}
+      ${(a.style||[]).map(s=>`<span class="chip tag">${esc(s)}</span>`).join('')}
+      ${a.why?`<div class="hint">爆点：${esc(a.why)}</div>`:''}
+      ${a.reuse?`<div class="hint">可复用开头：${esc(a.reuse)}</div>`:''}
+      ${x.note?`<div class="meta" style="margin-top:6px">我的笔记：${esc(x.note)}</div>`:''}
+      <div class="acts"><button class="btn ghost sm" onclick="delItem('model','${x.id}')">删除</button></div>
+    </div>`}).join('');
+}
+
+/* ============ 选题库 ============ */
+function openTopicForm(){
+  const models=DB.get('model',[]);
+  openModal(`<h3>新建选题</h3>
+    <label>标题/角度 *</label><input id="f_t_title" placeholder="如：为什么你越努力越焦虑">
+    <label>切入角度/正文要点</label><textarea id="f_t_angle" placeholder="具体想讲什么"></textarea>
+    <div class="form-grid">
+      <div><label>目标平台</label><select id="f_t_plat"><option>抖音</option><option>视频号</option></select></div>
+      <div><label>关联范文</label><select id="f_t_model"><option value="">不选</option>${models.map(m=>`<option value="${m.id}">${esc(m.text.slice(0,20))}</option>`).join('')}</select></div>
+    </div>
+    <label>评分（1-5，AI生成后可改）</label>
+    <div class="score-row">
+      <div class="score-box"><label>契合度</label><input id="f_t_fit" type="number" min="1" max="5" value="3"></div>
+      <div class="score-box"><label>时效性</label><input id="f_t_time" type="number" min="1" max="5" value="3"></div>
+      <div class="score-box"><label>差异性</label><input id="f_t_diff" type="number" min="1" max="5" value="3"></div>
+      <div class="score-box"><label>可执行</label><input id="f_t_exec" type="number" min="1" max="5" value="3"></div>
+    </div>
+    <div class="row" style="margin-top:16px"><button class="btn" onclick="saveTopic()">保存</button></div>`);
+}
+function saveTopic(){
+  const title=document.getElementById('f_t_title').value.trim();
+  if(!title){ toast('标题不能为空'); return }
+  const t=DB.get('topic',[]);
+  t.unshift({id:DB.uid(),title,angle:document.getElementById('f_t_angle').value,
+    platform:document.getElementById('f_t_plat').value, modelId:document.getElementById('f_t_model').value||null,
+    scores:{fit:+document.getElementById('f_t_fit').value,time:+document.getElementById('f_t_time').value,
+      diff:+document.getElementById('f_t_diff').value,exec:+document.getElementById('f_t_exec').value},
+    status:'draft',sched:null,created:Date.now()});
+  DB.set('topic',t); closeModal(); renderTopic(); toast('选题已建');
+}
+function topicScore(s){ return ((s.fit+s.time+s.diff+s.exec)/4).toFixed(1) }
+async function aiGenTopics(){
+  const ideas=DB.get('idea',[]).filter(i=>i.status==='pending');
+  const models=DB.get('model',[]);
+  const seed=ideas.length?ideas.map(i=>'· '+i.text).join('\n'):'（暂无灵感，请基于IP定位自由发散）';
+  const modelRef=models.slice(0,5).map(m=>`· ${m.text.slice(0,40)}（钩子:${m.analysis?.hook||'未拆解'}）`).join('\n')||'（暂无范文）';
+  const system=`你是短视频选题策划。${ruleContext()}\n基于用户灵感和已有范文风格，生成 5 个可执行选题。严格返回 JSON：
+  {"topics":[{"title":"标题","angle":"切入角度","platform":"抖音或视频号","why":"推荐理由","refModel":"可借鉴的范文方向"}]}`;
+  const user=`我的零散灵感：\n${seed}\n\n已有范文参考：\n${modelRef}\n\n请生成5个契合我IP的选题。`;
+  const res=await callDeepSeek(system,user,true);
+  if(!res.ok){ copyFallback({system,user}); return }
+  let data; try{ data=JSON.parse(res.content) }catch(e){ toast('AI返回解析失败'); return }
+  const list=DB.get('topic',[]); let added=0;
+  (data.topics||[]).forEach(tp=>{
+    list.unshift({id:DB.uid(),title:tp.title,angle:tp.angle,platform:tp.platform||'抖音',
+      modelId:null,scores:{fit:4,time:3,diff:4,exec:4},status:'draft',sched:null,
+      note:'AI生成 · '+(tp.why||''),created:Date.now()}); added++;
+  });
+  DB.set('topic',list); renderTopic(); toast(`AI 已生成 ${added} 个选题`);
+}
+function renderTopic(){
+  const list=DB.get('topic',[]).slice().sort((a,b)=>topicScore(b.scores)-topicScore(a.scores));
+  const q=(document.getElementById('topicSearch').value||'').toLowerCase();
+  const fl=list.filter(x=>!q||x.title.toLowerCase().includes(q)||(x.angle||'').toLowerCase().includes(q));
+  const box=document.getElementById('topicList');
+  if(document.getElementById('topicKanban').style.display!=='none'){ renderKanban(); return }
+  if(!fl.length){ box.innerHTML='<div class="empty">还没有选题，点"AI批量生成"或手动新建</div>'; return }
+  box.innerHTML=fl.map(x=>{
+    const st={draft:['draft','草稿'],sched:['sched','已排期'],pub:['pub','已发布']}[x.status]||['draft','草稿'];
+    return `<div class="card">
+      <div class="meta"><span class="badge ${st[0]}">${st[1]}</span> ${x.platform} · 评分 ${topicScore(x.scores)} · ${fmt(x.created)}</div>
+      <h3>${esc(x.title)}</h3>
+      ${x.angle?`<div class="body">${esc(x.angle)}</div>`:''}
+      ${x.note?`<div class="hint">${esc(x.note)}</div>`:''}
+      <div class="acts">
+        <button class="btn sm" onclick="setTopicStatus('${x.id}','sched')">排期</button>
+        <button class="btn sec sm" onclick="setTopicStatus('${x.id}','pub')">标记发布</button>
+        <button class="btn ghost sm" onclick="aiTopicAdvice('${x.id}')">AI优化建议</button>
+        <button class="btn ghost sm" onclick="delItem('topic','${x.id}')">删除</button>
+      </div>
+      <div id="ta_${x.id}"></div>
+    </div>`}).join('');
+}
+function setTopicStatus(id,st){
+  const t=DB.get('topic',[]); const x=t.find(i=>i.id===id); if(!x) return;
+  x.status=st; if(st==='sched'&&!x.sched) x.sched=Date.now();
+  if(st==='pub'){ // 自动同步到作品库
+    const w=DB.get('work',[]); w.unshift({id:DB.uid(),title:x.title,platform:x.platform,script:x.angle,
+      cover:'',modelId:x.modelId,data:{play:0,finish:0,like:0,comment:0,share:0,fan:0},status:'pub',created:Date.now()});
+    DB.set('work',w); toast('已同步到作品库');
+  }
+  DB.set('topic',t); renderTopic();
+}
+async function aiTopicAdvice(id){
+  const t=DB.get('topic',[]); const x=t.find(i=>i.id===id); if(!x) return;
+  const m=DB.get('model',[]).find(mm=>mm.id===x.modelId);
+  const system=`你是短视频脚本优化专家。${ruleContext()}\n给选题输出优化建议，返回 JSON：{"hook":"建议开头钩子","open":"前3秒脚本","improve":["优化点1","优化点2"],"title":"更抓人的标题"]}`;
+  const user=`选题：${x.title}\n角度：${x.angle||'无'}\n参考范文：${m?m.text.slice(0,200):'无'}`;
+  const res=await callDeepSeek(system,user,true);
+  const box=document.getElementById('ta_'+id);
+  if(!res.ok){ copyFallback({system,user}); box.innerHTML='<div class="ai-out">无Key，已复制提示词</div>'; return }
+  let a; try{a=JSON.parse(res.content)}catch(e){a={raw:res.content}}
+  box.innerHTML=`<div class="ai-out"><h4>AI 优化建议</h4>
+    ${a.hook?`钩子：${esc(a.hook)}<br>`:''}${a.open?`前3秒：${esc(a.open)}<br>`:''}
+    ${a.title?`标题：${esc(a.title)}<br>`:''}${(a.improve||[]).map(i=>'· '+esc(i)).join('<br>')||''}</div>`;
+}
+let kanbanOn=false;
+function toggleKanban(){ kanbanOn=!kanbanOn; document.getElementById('topicKanban').style.display=kanbanOn?'grid':'none'; document.getElementById('kanbanBtn').textContent=kanbanOn?'切换列表/看板':'切换看板/列表'; renderTopic(); }
+function renderKanban(){
+  const list=DB.get('topic',[]);
+  const cols={draft:list.filter(x=>x.status==='draft'),sched:list.filter(x=>x.status==='sched'),pub:list.filter(x=>x.status==='pub')};
+  document.getElementById('topicKanban').innerHTML=Object.entries({draft:['草稿',cols.draft],sched:['已排期',cols.sched],pub:['已发布',cols.pub]}).map(([k,[name,arr]])=>
+    `<div class="col"><h4>${name} (${arr.length})</h4>${arr.map(x=>`<div class="item" onclick="editTopic('${x.id}')">${esc(x.title)}<br><span class="pill">${x.platform}·${topicScore(x.scores)}</span></div>`).join('')||'<div class="meta">空</div>'}</div>`).join('');
+}
+function editTopic(id){ const x=DB.get('topic',[]).find(i=>i.id===id); if(!x) return; openModal(`<h3>${esc(x.title)}</h3><div class="body">${esc(x.angle||'无角度')}</div><div class="hint">评分 ${topicScore(x.scores)}</div>`); }
+
+/* ============ 作品库 ============ */
+function openWorkForm(){
+  const models=DB.get('model',[]); const topics=DB.get('topic',[]).filter(t=>t.status==='pub'||t.status==='sched');
+  openModal(`<h3>记录作品</h3>
+    <label>标题 *</label><input id="f_w_title" placeholder="作品标题">
+    <div class="form-grid">
+      <div><label>平台</label><select id="f_w_plat"><option>抖音</option><option>视频号</option></select></div>
+      <div><label>发布时间</label><input id="f_w_time" type="datetime-local"></div>
+    </div>
+    <label>文案/脚本</label><textarea id="f_w_script"></textarea>
+    <label>封面描述</label><input id="f_w_cover" placeholder="封面是什么？文字/画面">
+    <label>对标范文</label><select id="f_w_model"><option value="">不选</option>${models.map(m=>`<option value="${m.id}">${esc(m.text.slice(0,20))}</option>`).join('')}</select>
+    <div class="form-grid" style="margin-top:10px">
+      <div><label>播放量</label><input id="f_w_play" type="number" value="0"></div>
+      <div><label>完播率(%)</label><input id="f_w_finish" type="number" value="0"></div>
+      <div><label>点赞</label><input id="f_w_like" type="number" value="0"></div>
+      <div><label>评论</label><input id="f_w_comment" type="number" value="0"></div>
+      <div><label>转发</label><input id="f_w_share" type="number" value="0"></div>
+      <div><label>涨粉</label><input id="f_w_fan" type="number" value="0"></div>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" onclick="saveWork()">保存</button>
+      <button class="btn sec" id="w_ai" onclick="aiDiagnoseWork()">AI 诊断没流量原因</button>
+    </div>
+    <div id="w_out"></div>`);
+}
+function saveWork(){
+  const title=document.getElementById('f_w_title').value.trim();
+  if(!title){ toast('标题不能为空'); return }
+  const w=DB.get('work',[]);
+  w.unshift({id:DB.uid(),title,platform:document.getElementById('f_w_plat').value,
+    published:document.getElementById('f_w_time').value, script:document.getElementById('f_w_script').value,
+    cover:document.getElementById('f_w_cover').value, modelId:document.getElementById('f_w_model').value||null,
+    data:{play:+document.getElementById('f_w_play').value,finish:+document.getElementById('f_w_finish').value,
+      like:+document.getElementById('f_w_like').value,comment:+document.getElementById('f_w_comment').value,
+      share:+document.getElementById('f_w_share').value,fan:+document.getElementById('f_w_fan').value},
+    diagnosis:null,created:Date.now()});
+  DB.set('work',w); closeModal(); renderWork(); toast('作品已记录');
+}
+async function aiDiagnoseWork(){
+  const title=document.getElementById('f_w_title').value.trim();
+  if(!title){ toast('请先填标题'); return }
+  const d={play:+document.getElementById('f_w_play').value,finish:+document.getElementById('f_w_finish').value,
+    like:+document.getElementById('f_w_like').value,comment:+document.getElementById('f_w_comment').value,
+    share:+document.getElementById('f_w_share').value,fan:+document.getElementById('f_w_fan').value};
+  const m=DB.get('model',[]).find(mm=>mm.id===document.getElementById('f_w_model').value);
+  const system=`你是短视频数据诊断专家。${ruleContext()}\n分析作品为什么没流量/表现如何，返回 JSON：
+  {"verdict":"总体判断","reasons":["原因1","原因2"],"compare":"与对标范文的差距","fix":["优化动作1","优化动作2"],"next":"下一条建议方向"]}`;
+  const user=`标题：${title}\n平台：${document.getElementById('f_w_plat').value}\n发布时间：${document.getElementById('f_w_time').value||'未知'}\n封面：${document.getElementById('f_w_cover').value||'未知'}\n数据：播放${d.play} 完播${d.finish}% 赞${d.like} 评${d.comment} 转${d.share} 涨粉${d.fan}\n对标范文：${m?m.text.slice(0,200):'无'}`;
+  const res=await callDeepSeek(system,user,true);
+  const out=document.getElementById('w_out');
+  if(!res.ok){ copyFallback({system,user}); out.innerHTML='<div class="ai-out">无Key，已复制提示词</div>'; return }
+  let a; try{a=JSON.parse(res.content)}catch(e){a={raw:res.content}}
+  const w=DB.get('work',[]); const cur=w.find(x=>x.title===title&&!x.diagnosis);
+  if(cur){ cur.diagnosis=a; DB.set('work',w) }
+  out.innerHTML=`<div class="ai-out"><h4>AI 诊断</h4>
+    判断：${esc(a.verdict||'')}<br>
+    ${a.reasons?`<b>可能原因：</b><br>${a.reasons.map(r=>'· '+esc(r)).join('<br>')}<br>`:''}
+    ${a.compare?`<b>对标差距：</b>${esc(a.compare)}<br>`:''}
+    ${a.fix?`<b>优化动作：</b><br>${a.fix.map(f=>'· '+esc(f)).join('<br>')}<br>`:''}
+    ${a.next?`<b>下一步：</b>${esc(a.next)}`:''}</div>`;
+  renderWork(); toast('诊断完成');
+}
+function renderWork(){
+  const list=DB.get('work',[]); const q=(document.getElementById('workSearch').value||'').toLowerCase();
+  const f=document.getElementById('workFilter').value;
+  const fl=list.filter(x=>(!q||x.title.toLowerCase().includes(q))&&(!f||x.platform===f));
+  const box=document.getElementById('workList');
+  if(!fl.length){ box.innerHTML='<div class="empty">还没有作品记录</div>'; return }
+  box.innerHTML=fl.map(x=>{
+    const d=x.data||{}; const diag=x.diagnosis||{};
+    return `<div class="card">
+      <div class="meta">${x.platform} · ${fmt(x.published||x.created)}</div>
+      <h3>${esc(x.title)}</h3>
+      <div class="stat">
+        <div class="s"><b>${d.play||0}</b><span>播放</span></div>
+        <div class="s"><b>${d.finish||0}%</b><span>完播</span></div>
+        <div class="s"><b>${d.like||0}</b><span>赞</span></div>
+        <div class="s"><b>${d.comment||0}</b><span>评</span></div>
+        <div class="s"><b>${d.fan||0}</b><span>涨粉</span></div>
+      </div>
+      ${diag.verdict?`<div class="ai-out"><h4>AI 诊断</h4>判断：${esc(diag.verdict)}<br>${(diag.reasons||[]).map(r=>'· '+esc(r)).join('<br>')}</div>`:''}
+      <div class="acts">
+        <button class="btn ghost sm" onclick="reDiagnose('${x.id}')">重新诊断</button>
+        <button class="btn ghost sm" onclick="delItem('work','${x.id}')">删除</button>
+      </div>
+    </div>`}).join('');
+}
+function reDiagnose(id){ const x=DB.get('work',[]).find(i=>i.id===id); if(!x) return;
+  x.diagnosis=null; DB.set('work',DB.get('work',[])); 
+  openModal(`<h3>重新诊断：${esc(x.title)}</h3><div class="body">点击下方按钮基于已有数据重新分析。</div>
+    <div class="row" style="margin-top:14px"><button class="btn sec" onclick="aiDiagnoseById('${x.id}')">AI 诊断</button></div><div id="rd_out"></div>`);
+}
+async function aiDiagnoseById(id){
+  const x=DB.get('work',[]).find(i=>i.id===id); if(!x) return;
+  const m=DB.get('model',[]).find(mm=>mm.id===x.modelId);
+  const d=x.data||{};
+  const system=`你是短视频数据诊断专家。${ruleContext()}\n返回 JSON：{"verdict":"判断","reasons":["原因"],"compare":"对标差距","fix":["动作"],"next":"下一步"}`;
+  const user=`标题：${x.title}\n平台：${x.platform}\n发布：${x.published||'未知'}\n封面：${x.cover||'未知'}\n数据：播放${d.play} 完播${d.finish}% 赞${d.like} 评${d.comment} 转${d.share} 涨粉${d.fan}\n对标：${m?m.text.slice(0,200):'无'}`;
+  const res=await callDeepSeek(system,user,true);
+  const out=document.getElementById('rd_out');
+  if(!res.ok){ copyFallback({system,user}); out.innerHTML='<div class="ai-out">无Key，已复制提示词</div>'; return }
+  let a; try{a=JSON.parse(res.content)}catch(e){a={raw:res.content}}
+  x.diagnosis=a; DB.set('work',DB.get('work',[])); renderWork();
+  out.innerHTML=`<div class="ai-out"><h4>AI 诊断</h4>判断：${esc(a.verdict||'')}<br>${(a.reasons||[]).map(r=>'· '+esc(r)).join('<br>')}<br>${(a.fix||[]).map(f=>'▶ '+esc(f)).join('<br>')}</div>`;
+}
+
+/* ============ 复盘库 ============ */
+async function aiReview(type){
+  const works=DB.get('work',[]); const topics=DB.get('topic',[]);
+  const now=Date.now(); const range=type==='week'?7*864e5:30*864e5;
+  const recentW=works.filter(w=>now-(w.created)<range);
+  const recentT=topics.filter(t=>now-(t.created)<range);
+  const pubT=topics.filter(t=>t.status==='pub').length;
+  const totalPlay=recentW.reduce((s,w)=>s+(w.data?.play||0),0);
+  const avgFinish=recentW.length?Math.round(recentW.reduce((s,w)=>s+(w.data?.finish||0),0)/recentW.length):0;
+  const system=`你是自媒体运营复盘教练。${ruleContext()}\n生成${type==='week'?'周':'月'}度复盘，返回 JSON：
+  {"summary":"周期一句话总结","data":"数据亮点与问题","find":"发现的规律","action":["下一步行动1","行动2"],"direction":"方向调整建议"]}`;
+  const user=`本${type==='week'?'周':'月'}：发布作品${recentW.length}条（总播放${totalPlay}，平均完播${avgFinish}%），选题库共${topics.length}条（已发布${pubT}）。\n作品标题：${recentW.map(w=>w.title).join('、')||'无'}\n近期选题：${recentT.map(t=>t.title).join('、')||'无'}`;
+  const res=await callDeepSeek(system,user,true);
+  if(!res.ok){ copyFallback({system,user}); return }
+  let a; try{a=JSON.parse(res.content)}catch(e){a={raw:res.content}}
+  const list=DB.get('review',[]);
+  list.unshift({id:DB.uid(),type,period:type==='week'?'周':'月',content:a,created:Date.now()});
+  DB.set('review',list); renderReview(); toast('复盘已生成');
+}
+function renderReview(){
+  const list=DB.get('review',[]); const box=document.getElementById('reviewList');
+  if(!list.length){ box.innerHTML='<div class="empty">还没有复盘，点上方按钮生成周/月报</div>'; return }
+  box.innerHTML=list.map(x=>{ const c=x.content||{}; return `<div class="card">
+    <div class="meta"><span class="pill">${x.period}复盘</span> ${fmt(x.created)}</div>
+    <div class="ai-out"><h4>复盘结论</h4>
+      总结：${esc(c.summary||'')}<br>
+      ${c.data?`<b>数据：</b>${esc(c.data)}<br>`:''}
+      ${c.find?`<b>规律：</b>${esc(c.find)}<br>`:''}
+      ${c.action?`<b>行动：</b><br>${c.action.map(a=>'· '+esc(a)).join('<br>')}<br>`:''}
+      ${c.direction?`<b>方向：</b>${esc(c.direction)}`:''}
+    </div>
+    <div class="acts"><button class="btn ghost sm" onclick="delItem('review','${x.id}')">删除</button></div>
+  </div>`}).join('');
+}
+
+/* ============ 规则库 ============ */
+function renderRule(){
+  const r=DB.get('rule',{});
+  const quest=[['track','你的赛道/领域是？','如：职场成长、家庭教育、减脂健身'],
+    ['persona','你的人设是什么？','如：踩过坑的职场前辈、真实带娃的宝妈'],
+    ['audience','目标受众是谁？','如：25-35岁职场新人'],
+    ['tone','内容调性？','如：毒舌直给 / 温柔治愈 / 干货硬核'],
+    ['diff','你的差异化/记忆点？','别人没讲过的角度'],
+    ['ratio','内容比例规划？','如：60%干货+30%人设+10%热点'],
+    ['time','最佳发布时段？','如：晚8-10点'],
+    ['redline','风格红线/禁区？','绝对不碰的话题']];
+  const saved=quest.every(([k])=>r[k]&&r[k].trim());
+  document.getElementById('ruleContent').innerHTML=`
+    <div class="form-wrap">
+      <div class="hint">${saved?'✓ 已完成定位，AI 会按以下约束产出。可随时修改。':'完成下方问卷，AI 才会按"你的风格"工作。'}</div>
+      ${quest.map(([k,q,h])=>`<label>${q}</label><input id="r_${k}" value="${esc(r[k]||'')}" placeholder="${h}">`).join('')}
+      <div class="row" style="margin-top:16px">
+        <button class="btn" onclick="saveRule()">保存定位</button>
+        <button class="btn sec" onclick="aiPosition()">AI 帮我提炼定位卡</button>
+      </div>
+      <div id="r_out"></div>
+      ${r.position?`<details open><summary>当前定位卡</summary><div class="ai-out">${esc(r.position)}</div></details>`:''}
+    </div>`;
+}
+async function aiPosition(){
+  // 先读取输入框当前内容并暂存（避免用户没点"保存定位"就直接点提炼）
+  const r=DB.get('rule',{});
+  ['track','persona','audience','tone','diff','ratio','time','redline'].forEach(k=>{
+    const el=document.getElementById('r_'+k); if(el) r[k]=el.value.trim();
+  });
+  DB.set('rule',r);
+  const filled=Object.entries(r).filter(([k,v])=>typeof v==='string'&&v.trim()).map(([k,v])=>`${k}: ${v}`).join('\n');
+  if(!filled){ toast('请先在上方填入定位信息，再点提炼'); return }
+  const system='你是个人IP定位顾问。把用户的零散信息提炼成一张清晰的定位卡（人设一句话、受众画像、内容支柱、记忆点、避坑）。返回 JSON：{"position":"定位卡文字"}';
+  const user=`用户填写：\n${filled}`;
+  const res=await callDeepSeek(system,user,true);
+  if(!res.ok){ if(res.reason==='nokey'){ toast('未配置 DeepSeek Key，已复制提示词，去豆包/Kimi/ChatGPT 粘贴即可生成定位卡'); } copyFallback({system,user}); return }
+  let a; try{a=JSON.parse(res.content)}catch(e){a={position:res.content}}
+  const rule=DB.get('rule',{}); rule.position=a.position; DB.set('rule',rule);
+  document.getElementById('r_out').innerHTML=`<details open><summary>AI 定位卡</summary><div class="ai-out">${esc(a.position)}</div></details>`;
+  renderRule(); renderOverview(); toast('定位卡已生成，可在上方查看');
+}
+function saveRule(){
+  const r=DB.get('rule',{});
+  ['track','persona','audience','tone','diff','ratio','time','redline'].forEach(k=>{ r[k]=document.getElementById('r_'+k).value.trim() });
+  DB.set('rule',r); renderRule(); renderOverview(); toast('定位已保存');
+}
+
+/* ============ 设置 ============ */
+function saveSettings(){
+  const s=DB.get('settings',{});
+  s.apiKey=document.getElementById('apiKey').value.trim();
+  s.apiModel=document.getElementById('apiModel').value;
+  DB.set('settings',s); toast('设置已保存');
+}
+function loadSettings(){
+  const s=DB.get('settings',{});
+  document.getElementById('apiKey').value=s.apiKey||'';
+  document.getElementById('apiModel').value=s.apiModel||'deepseek-chat';
+}
+async function testAPI(){
+  const res=await callDeepSeek('你是助手','回复"连接成功"',false);
+  if(res.ok) toast('✓ API 连接成功'); else toast('✗ 连接失败：'+(res.detail||res.reason));
+}
+function exportData(){
+  const all={}; stores.forEach(s=>all[s]=DB.get(s, s==='rule'?{}:[]));
+  const blob=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='自媒体工作台备份_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); toast('已导出');
+}
+function importData(input){
+  const f=input.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ try{
+    const data=JSON.parse(reader.result);
+    stores.forEach(s=>{ if(data[s]!==undefined) DB.set(s,data[s]) });
+    loadSettings(); renderAll(); toast('导入成功');
+  }catch(e){ toast('导入失败：文件格式错误') } };
+  reader.readAsText(f);
+}
+function clearAll(){
+  if(!confirm('确定清空全部数据？此操作不可恢复（建议先导出备份）。')) return;
+  stores.forEach(s=>DB.set(s, s==='rule'?{}:[])); renderAll(); toast('已清空');
+}
+
+/* ============ 通用删除 ============ */
+function delItem(store,id){
+  if(!confirm('确定删除？')) return;
+  const list=DB.get(store,[]).filter(x=>x.id!==id); DB.set(store,list);
+  ({idea:renderIdea,model:renderModel,topic:renderTopic,work:renderWork,review:renderReview}[store])();
+  toast('已删除');
+}
+
+/* ============ 初始化 ============ */
+function renderAll(){ renderOverview(); renderIdea(); renderModel(); renderTopic(); renderWork(); renderReview(); renderRule(); }
+
+/* 首次访问注入示例数据（仅当各库从未写入过，避免覆盖用户数据） */
+function seedDemo(){
+  const now=Date.now(), D=864e5;
+  if(!DB.has('rule')) DB.set('rule',{
+    track:'职场成长', persona:'踩过坑的普通职场人', audience:'22-30岁职场新人',
+    tone:'毒舌直给+干货', diff:'用真实翻车经历讲方法论', ratio:'60%干货+30%人设+10%热点',
+    time:'晚8-10点', redline:'不灌毒鸡汤、不教人躺平', position:'【人设】一个踩过坑、敢说真话的职场老大哥。\n【受众】22-30岁刚工作的新人，焦虑但想变强。\n【内容支柱】避坑干货 / 真实翻车复盘 / 职场认知。\n【记忆点】"别信那些漂亮话，我替你试过坑了"。\n【避坑】不灌鸡汤、不教躺平。'
+  });
+  if(!DB.has('idea')) DB.set('idea',[
+    {id:DB.uid(),text:'为什么明明很努力，年终却被说"缺乏主动性"？这届年轻人真的冤',tags:['职场','吐槽','观察'],status:'pending',created:now-2*D},
+    {id:DB.uid(),text:'领导说"你很有潜力"到底是不是好话？',tags:['职场','人设'],status:'pending',created:now-1*D}
+  ]);
+  if(!DB.has('model')) DB.set('model',[
+    {id:DB.uid(),text:'你有没有发现，那些天天加班的人，最后都没升职。我待过三家公司，总结出一条铁律：在公司里，能见度比工作量重要十倍。你做的再多，领导看不见等于零。所以我后来学乖了，每周五发一条周报，三句话讲清我干了啥、有啥结果、下一步咋办。半年后我成了部门最年轻的主管。',platform:'抖音',source:'@职场老王',note:'开头反常识很抓人，周报三句话模板可复用',analysis:{hook:'反常识',struct:'现象-经历-方法-结果',golden:['能见度比工作量重要十倍','你做的再多，领导看不见等于零'],duration:'38秒',style:['反常识','故事化','干货'],why:'反常识开头+真实经历背书，可信又有冲突',reuse:'你有没有发现，那些____的人，最后都____'},created:now-3*D},
+    {id:DB.uid(),text:'别再跟我说什么格局了。我刚工作那年，同事让我帮忙做表，我不好意思拒绝，结果活全成了我的，功劳全是他的。后来我才懂，职场里善良必须带牙齿。不是教你使坏，是教你把边界说清楚。第一次说"不"很难，但说一次，后面就轻松了。',platform:'视频号',source:'@清醒职场',note:'情绪共鸣强，痛点直击',analysis:{hook:'痛点直击',struct:'反驳-经历-认知-行动',golden:['善良必须带牙齿','第一次说不很难，但说一次后面就轻松了'],duration:'42秒',style:['情绪共鸣','犀利','人设'],why:'替观众说出不敢说的话，爽感强',reuse:'别再跟我说什么____了'},created:now-2*D}
+  ]);
+  if(!DB.has('topic')) DB.set('topic',[
+    {id:DB.uid(),title:'领导说"你很有潜力"是夸还是坑',angle:'拆解这个模糊评价的三种真实含义，以及该怎么接话',platform:'抖音',modelId:null,scores:{fit:5,time:4,diff:4,exec:5},status:'sched',sched:now+1*D,note:'AI生成·来自灵感"领导说你有潜力"',created:now-1*D},
+    {id:DB.uid(),title:' Weekly复盘模板：三句话让领导记住你',angle:'复用范文里的周报三句话法，做成可套用模板',platform:'视频号',modelId:null,scores:{fit:5,time:3,diff:3,exec:5},status:'draft',sched:null,note:'AI生成·借鉴范文1的周报模板',created:now},
+    {id:DB.uid(),title:'为什么努力的人反而没升职',angle:'用反常识开头，讲能见度>工作量',platform:'抖音',modelId:null,scores:{fit:4,time:3,diff:5,exec:4},status:'pub',sched:null,note:'已发布选题',created:now-4*D}
+  ]);
+  if(!DB.has('work')) DB.set('work',[
+    {id:DB.uid(),title:'为什么努力的人反而没升职',platform:'抖音',published:new Date(now-3*D).toISOString().slice(0,16),script:'你有没有发现，那些天天加班的人，最后都没升职…',cover:'黑底白字：努力≠升职',modelId:null,data:{play:1200,finish:18,like:42,comment:8,share:3,fan:5},diagnosis:{verdict:'完播率偏低，开头钩子没接住',reasons:['前3秒信息密度低，观众划走','封面文字有冲突但画面单调'],compare:'对标范文1完播约35%，本片18%差距明显',fix:['前3秒直接抛出反常识结论','封面加人物表情增强点击'],next:'下条试试用"你有没有发现"句式开头'},created:now-3*D},
+    {id:DB.uid(),title:'善良必须带牙齿',platform:'视频号',published:new Date(now-1*D).toISOString().slice(0,16),script:'别再跟我说什么格局了…',cover:'真人出镜+字幕',modelId:null,data:{play:8600,finish:41,like:520,comment:96,share:180,fan:73},diagnosis:{verdict:'数据较好，情绪共鸣赛道验证成立',reasons:['痛点直击开头完播高','情绪爽点带来高转发'],compare:'接近对标范文2水平',fix:['乘胜追击多做同类选题','评论区引导话题讨论'],next:'围绕"职场边界"做系列'},created:now-1*D}
+  ]);
+  if(!DB.has('review')) DB.set('review',[
+    {id:DB.uid(),type:'week',period:'周',content:{summary:'本周2条作品，情绪共鸣类完播41%明显优于反常识类18%',data:'总播放9800，涨粉78，情绪类（善良带牙齿）跑赢',find:'痛点直击+真人出镜完播更高；纯口播信息密度低易划走',action:['下周多做"边界/拒绝"类情绪选题','反常识类优化前3秒','周五固定发周报向领导晒能见度'],direction:'内容比例向情绪共鸣倾斜，干货用模板化降低制作成本'},created:now}
+  ]);
+}
+seedDemo();
+loadSettings(); renderAll();
+</script>
+</body>
+</html>
